@@ -5,47 +5,41 @@ This Python script carries out sophisticated flow regime identification of press
 ## Summary
 
 The program is designed to:
-- **Segment** pressure transient data using a sliding window technique to isolate meaningful features and reduce noise.
-- **Cluster** the segmented data using multiple approaches:
-  - **K-Means:** Uses an Euclidean metric based on feature vectors, where each segment is represented by a stack of normalized mid-point (x, y) coordinates, slope, and index information.
-  - **K-Medoids:** Employs a weighted, multi-metric dissimilarity measure computed pair-wise between segments.
-  - **Semi-Automated K-Clustering:** Uses the **Elbow method** to help determine the optimal number of clusters.
+Use sliding window approach to separate pressure transient data into segments, filtering out significant features while minimizing the noise. It uses various techniques for clustering the segmented dataset:
+- **K-Means:** Employs Euclidean distance metric on feature vectors, where each segment is characterized by a set of normalized mid-point (x, y) coordinates, along with slope and index information.
+- **K-Medoids:** Employs a weighted, multi-metric dissimilarity measure computed pairwise between segments.
 
-## Key Features
+## Main Features
 
-- **Multi-Algorithm Clustering:** Offers both K-Means and K-Medoids to capture different aspects of the data.
-- **Semi-Automated Cluster Selection:** The Elbow method provides guidance on choosing an optimal number of clusters.
-- **Multi-Metric Integration:** Combines multiple measures, including:
+- **Multi-Algorithm Clustering:** Offers K-Means and K-Medoids both to capture different aspects of the data.
+- **Semi-Automated Cluster Selection:** Uses the Elbow method to provide a heuristic approach in finding the most suitable number of clusters.
+- **Composite-Metric Integration:** Combines several metrics, such as:
   - **Euclidean Distance:** Measures geometric differences.
-  - **Angular Dissimilarity:** Captures differences in trend (slope) between segments.
-  - **Temporal Penalty:** Discourages transitions between clusters, especially at boundaries.
-  - **Inverted-V Identification:** Detects specific transient patterns.
-- **Data Segmentation:** A sliding window approach reduces random and systematic noise by working on data segments rather than raw data.
+  - **Angular Dissimilarity:** Computes differences in trends (slope) among segments.
+  - **Temporal Penalty:** Disincentivizes cluster switching, especially on boundaries (i.e., prevents repeating clusters).
+  - **Inverted-V Identification:** Recognizes a specific transient pattern which occurs in the early time region (ETR). This is an inverted-V, which indicates the strong wellbore storage on the left side of       the pattern and the weak wellbore storage on the right side of the pattern.
+  - **Data Segmentation:** Implements a sliding window approach, which reduces random and systematic noise by operating on linearly-filtered data segments rather than raw data.
 
 ## Methodology
 
 ### Data Segmentation
 
-The input pressure diagnostic data is segmented using a sliding window to enhance the signal-to-noise ratio. This segmentation averages or filters transient behaviors, providing a robust basis for feature extraction.
+The pressure diagnostic data is divided into segments by using a sliding window. Segment-by-segment analysis is more effective for flow regime identification because each regime is a cluster of data points (i.e., a segment). Segmentation also helps to reduce noise, making the analysis more credible.
 
-### Feature Extraction & Measure Computation
+### Feature Measure Computation
 
-For each segment, a feature vector is computed by calculating various metrics.
-
+For each segment, a set of features is extracted by computing a number of metrics.
 #### K-Means Clustering
 
-- **Feature Vector Construction:**  
-  Each segment is represented as a stack of normalized values including:
-  - **Mid-point \(x, y\) Coordinates:** The center position of the segment.
-  - **Slope:** Derived via linear regression to capture the segment's trend.
-  - **Index Information:** The segment’s index in the dataset.
-  
-- **Distance Calculation:**  
-  The algorithm computes the Euclidean distance between each segment’s feature vector and the cluster centroid (the mean of all feature vectors in that cluster). Segments are then iteratively reassigned to the nearest centroid until convergence.
+Each segment is expressed as a set of normalized values consisting of:
+  - **Mid-point \(x, y\) Coordinates:** The x and y coordinates, and median of all data points in the segment.
+  - **Slope:** Derived using linear regression to determine the trend of the segment.
+  - **Index Information:** The position of the segment within the dataset.
+**Distance Calculation:** The set of normalized values are vertically stacked and used to compute a distance metric using the Euclidean norm. 
 
 #### K-Medoids Clustering
 
-A set of normalized dissimilarity metrics is computed pair-wise between segments. These metrics capture different aspects of the data:
+A set of pairwise standardized dissimilarity measures are calculated between segments. These measures equate to various dimensions of the data:
 - **Normalized Euclidean Distance**  
   For two 2D segments, *P<sub>i</sub>* and *P<sub>j</sub>*, each containing *m* data points:
   - Represent *P<sub>i</sub>* as:  
@@ -100,11 +94,11 @@ The max function ensures that the overall dissimilarity is non-negative.
   - **Process:** The Euclidean distance between the feature vector and the cluster centroid is computed, segments are assigned to the nearest centroid, and centroids are updated iteratively until convergence.
 
 - **K-Medoids Clustering:**  
-  - **Representation:** Uses the comprehensive dissimilarity measure \(\tilde{d}_{ij}\) computed from Euclidean, angular, temporal, and inverted-V metrics.
+  - **Representation:** Uses the composite dissimilarity measure <sub>![\tilde{d}_{ij}](https://latex.codecogs.com/svg.latex?\tilde{d}_{ij})</sub> computed from Euclidean, angular, temporal, and inverted-V metrics.
   - **Process:** Selects actual data segments (medoids) as cluster centers and forms clusters based on the weighted aggregation of these dissimilarities.
 
 - **Semi-Automated K-Clustering with the Elbow Method:**  
-  - **Process:** Computes the within-cluster sum-of-squares (WCSS) for various \(k\) values, generates an Elbow plot to indicate where WCSS reduction plateaus, and recommends an optimal \(k\) while allowing manual adjustments.
+  - **Process:** Computes the within-cluster sum-of-squares (WCSS) for various \(K\) values, generates an Elbow plot to indicate where WCSS reduction plateaus, and recommends an optimal \(K\) while allowing manual adjustments.
 
 ## Installation and Requirements
 
