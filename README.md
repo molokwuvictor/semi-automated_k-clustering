@@ -1,30 +1,25 @@
 # Flow Regime Identification Using K-Means and K-Medoids Clustering
 
-This Python script carries out sophisticated flow regime identification of pressure transient diagnostic data. It applies both **K-Means** and **K-Medoids** clustering techniques, as well as semi-automated K-clustering through the Elbow method, by integrating various diagnostic indicators for secure classification.
-
 ## Summary
-
-The program is designed to:
-Use sliding window approach to separate pressure transient data into segments, filtering out significant features while minimizing the noise. It uses various techniques for clustering the segmented dataset:
-- **K-Means:** Employs Euclidean distance metric on feature vectors, where each segment is characterized by a set of normalized mid-point (x, y) coordinates, along with slope and index information.
-- **K-Medoids:** Employs a weighted, multi-metric dissimilarity measure computed pairwise between segments.
+This Python script performs a semi-automated identification of flow regimes present in a pressure transient diagnostic data. It applies both **K-Means** and **K-Medoids** clustering techniques, as well as semi-automated K-clustering using the Elbow method. It can reliably partition the diagnostic data into the different flow regimes by integrating various subject-specific diagnostic indicators. 
+The program implements a sliding window approach to segment the pressure transient diagnostic data. Two standard partitioning techniques are utilized:
+- **K-Means:** Applies Euclidean distance metric on segments, where each segment is characterized by a set of normalized mid-point (x, y) coordinates, along with slope and index information.
+- **K-Medoids:** Applies a weighted composite pair-wise dissimilarity between segments, where is segment is characterized by Euclidean distance, angular difference, temporal and pattern information.
 
 ## Main Features
 
-- **Multi-Algorithm Clustering:** Offers K-Means and K-Medoids both to capture different aspects of the data.
-- **Semi-Automated Cluster Selection:** Uses the Elbow method to provide a heuristic approach in finding the most suitable number of clusters.
 - **Composite-Metric Integration:** Combines several metrics, such as:
   - **Euclidean Distance:** Measures geometric differences.
-  - **Angular Dissimilarity:** Computes differences in trends (slope) among segments.
+  - **Angular Difference:** Computes differences in trends (slope) among segments.
   - **Temporal Penalty:** Disincentivizes cluster switching, especially on boundaries (i.e., prevents repeating clusters).
   - **Inverted-V Identification:** Recognizes a specific transient pattern which occurs in the early time region (ETR). This is an inverted-V, which indicates the strong wellbore storage on the left side of       the pattern and the weak wellbore storage on the right side of the pattern.
-  - **Data Segmentation:** Implements a sliding window approach, which reduces random and systematic noise by operating on linearly-filtered data segments rather than raw data.
-
+- **Semi-Automated Cluster Selection:** Uses the Elbow method to provide a heuristic approach in finding the most suitable number of clusters.
+    
 ## Methodology
 
 ### Data Segmentation
 
-The pressure diagnostic data is divided into segments by using a sliding window. Segment-by-segment analysis is more effective for flow regime identification because each regime is a cluster of data points (i.e., a segment). Segmentation also helps to reduce noise, making the analysis more credible.
+The pressure diagnostic data is divided into segments by using a sliding window. Segment-by-segment analysis is more effective for flow regime identification because flow regimes are a cluster of data points (i.e., a segment). Segmentation also helps to reduce noise, making the analysis more credible.
 
 ### Feature Measure Computation
 
