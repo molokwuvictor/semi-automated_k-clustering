@@ -1,7 +1,7 @@
 # Flow Regime Identification Using K-Means and K-Medoids Clustering
 
 ## Summary
-This Python script performs a semi-automated identification of flow regimes present in a pressure transient diagnostic data. It applies both **K-Means** and **K-Medoids** clustering techniques, as well as semi-automated K-clustering using the Elbow method. It can reliably partition the diagnostic data into the different flow regimes by integrating various subject-specific diagnostic indicators. 
+This Python script identifies flow regimes present in a pressure transient diagnostic data. It applies both **K-Means** and **K-Medoids** clustering techniques, as well as semi-automated K-clustering using the Elbow method. It can reliably partition the diagnostic data into the different flow regimes by integrating various subject-specific diagnostic indicators. 
 The program implements a sliding window approach to segment the pressure transient diagnostic data. Two standard partitioning techniques are utilized:
 - **K-Means:** Applies Euclidean distance metric on segments, where each segment is characterized by a set of normalized mid-point (x, y) coordinates, along with slope and index information.
 - **K-Medoids:** Applies a weighted composite pair-wise dissimilarity between segments, where is segment is characterized by Euclidean distance, angular difference, temporal and pattern information.
