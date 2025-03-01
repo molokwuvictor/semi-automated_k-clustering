@@ -13,7 +13,7 @@ The program implements a sliding window approach to segment the pressure transie
   - **Angular Difference:** Computes differences in trends (slope) among segments.
   - **Temporal Penalty:** Disincentivizes cluster switching, especially on boundaries (i.e., prevents repeating clusters).
   - **Inverted-V Identification:** Recognizes a specific transient pattern which occurs in the early time region (ETR). This is an inverted-V, which indicates the strong wellbore storage on the left side of       the pattern and the weak wellbore storage on the right side of the pattern.
-- **Semi-Automated Cluster Selection:** Uses the Elbow method to provide a heuristic approach in finding the most suitable number of clusters.
+- **Semi-Automated Cluster Selection:** Applies the Elbow method, a heuristic technique, to find the most suitable number of clusters.
     
 ## Methodology
 
@@ -21,9 +21,11 @@ The program implements a sliding window approach to segment the pressure transie
 
 The pressure diagnostic data is divided into segments by using a sliding window. Segment-by-segment analysis is more effective for flow regime identification because flow regimes are a cluster of data points (i.e., a segment). Segmentation also helps to reduce noise, making the analysis more credible.
 
-### Feature Measure Computation
+### Feature Computation
 
-For each segment, a set of features is extracted by computing a number of metrics.
+For each segment, a set of features is extracted by computing a number of metrics as illustrated in Figure 1.
+![Figure 1: 2D dataset with illustrating segmentation yielding two segments with feature vectors *P<sub>i</sub>* and *P<sub>j</sub>* and slopes *m<sub>i</sub>* and *m<sub>j</sub>*](segment_1.png)
+
 #### K-Means Clustering
 
 Each segment is expressed as a set of normalized values consisting of:
@@ -36,7 +38,7 @@ Each segment is expressed as a set of normalized values consisting of:
 
 A set of pairwise standardized dissimilarity measures are calculated between segments. These measures equate to various dimensions of the data:
 - **Normalized Euclidean Distance**  
-  For two 2D segments, *P<sub>i</sub>* and *P<sub>j</sub>*, each containing *m* data points:
+  For two 2D segments *P<sub>i</sub>* and *P<sub>j</sub>* each containing *m* data points:
   - Represent *P<sub>i</sub>* as:  
   ![P_i = \{(x_{i1}, y_{i1}), (x_{i2}, y_{i2}), \ldots, (x_{im}, y_{im})\}](https://latex.codecogs.com/svg.latex?P_i%20%3D%20%5C%7B%28x_%7Bi1%7D%2C%20y_%7Bi1%7D%29%2C%20%28x_%7Bi2%7D%2C%20y_%7Bi2%7D%29%2C%20%5Cldots%2C%20%28x_%7Bim%7D%2C%20y_%7Bim%7D%29%5C%7D)
   - Represent *P<sub>j</sub>* as:  
@@ -65,8 +67,9 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
   ![Temporal Penalty Alternative](https://latex.codecogs.com/svg.latex?\tilde{d}_{T_{ij}}=\max(0,\delta-1))
 
 - **Inverted-V Identification**  
-  When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels *w* and *w′* are set to True for the corresponding segments. The dissimilarity <sub>![d_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?d_{\Lambda(i,j)})</sub> is defined as:
-
+  When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w}')</sub> are set to True for the corresponding segments. The dissimilarity <sub>![d_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?d_{\Lambda(i,j)})</sub> is defined as:
+  ![Figure 2: Illustration of the inverted-V pattern (dashed line) in a diagnostic plot, which has been split into n-segments and overlain by a sliding block of p-segments](segment_2) 
+  
   ![Inverted-V Identification](https://latex.codecogs.com/svg.latex?%5Ctilde%7Bd%7D_%7B%5CLambda_%7Bij%7D%7D%3D%5Cbegin%7Bcases%7D-1%2C%26%5Ctext%7Bif%20%7Dw%5Ctext%7B%20and%20%7Dw'%5Ctext%7B%20are%20True%7D%5C%5C0%2C%26%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D)
 
   This ensures that segments with an inverted-V pattern are strongly grouped together.
