@@ -67,7 +67,7 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
   ![Temporal Penalty Alternative](https://latex.codecogs.com/svg.latex?\tilde{d}_{T_{ij}}=\max(0,\delta-1))
 
 - **Inverted-V Identification**  
-  When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels ![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w}) and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w}')</sub> are set to True for the corresponding segments. The dissimilarity <sub>![d_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?d_{\Lambda(i,j)})</sub> is defined as:
+  When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\{w}')</sub> are set to True for the corresponding segments. The dissimilarity <sub>![\tilde{d}_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?\tilde{d}_{\Lambda(i,j)})</sub> is defined as:
   ![Figure 2: Illustration of the inverted-V pattern (dashed line) in a diagnostic plot, which has been split into n-segments and overlain by a sliding block of p-segments](./images/segmentation_2.png) 
 
   ![Inverted-V Identification](https://latex.codecogs.com/svg.latex?%5Ctilde%7Bd%7D_%7B%5CLambda_%7Bij%7D%7D%3D%5Cbegin%7Bcases%7D-1%2C%26%5Ctext%7Bif%20%7Dw%5Ctext%7B%20and%20%7Dw'%5Ctext%7B%20are%20True%7D%5C%5C0%2C%26%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D)
