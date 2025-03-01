@@ -24,7 +24,7 @@ The pressure diagnostic data is divided into segments by using a sliding window.
 ### Feature Computation
 
 For each segment, a set of features is extracted by computing a number of metrics as illustrated in Figure 1.
-![Figure 1: 2D dataset with illustrating segmentation yielding two segments with feature vectors *P<sub>i</sub>* and *P<sub>j</sub>* and slopes *m<sub>i</sub>* and *m<sub>j</sub>*](segment_1.png)
+![Figure 1: 2D dataset with illustrating segmentation yielding two segments with feature vectors *P<sub>i</sub>* and *P<sub>j</sub>* and slopes *m<sub>i</sub>* and *m<sub>j</sub>*](segmentation_1.png)
 
 #### K-Means Clustering
 
@@ -68,7 +68,7 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
 
 - **Inverted-V Identification**  
   When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\mathcal{w}')</sub> are set to True for the corresponding segments. The dissimilarity <sub>![d_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?d_{\Lambda(i,j)})</sub> is defined as:
-  ![Figure 2: Illustration of the inverted-V pattern (dashed line) in a diagnostic plot, which has been split into n-segments and overlain by a sliding block of p-segments](segment_2) 
+  ![Figure 2: Illustration of the inverted-V pattern (dashed line) in a diagnostic plot, which has been split into n-segments and overlain by a sliding block of p-segments](segmentation_2) 
   
   ![Inverted-V Identification](https://latex.codecogs.com/svg.latex?%5Ctilde%7Bd%7D_%7B%5CLambda_%7Bij%7D%7D%3D%5Cbegin%7Bcases%7D-1%2C%26%5Ctext%7Bif%20%7Dw%5Ctext%7B%20and%20%7Dw'%5Ctext%7B%20are%20True%7D%5C%5C0%2C%26%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D)
 
