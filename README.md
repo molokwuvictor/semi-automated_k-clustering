@@ -81,9 +81,7 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
 
   ![Inverted-V Identification](https://latex.codecogs.com/svg.latex?%5Ctilde%7Bd%7D_%7B%5CLambda_%7Bij%7D%7D%3D%5Cbegin%7Bcases%7D-1%2C%26%5Ctext%7Bif%20%7Dw%5Ctext%7B%20and%20%7Dw'%5Ctext%7B%20are%20True%7D%5C%5C0%2C%26%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D)
 
-  <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\{w}')</sub> are the boolean labels for pair-wise windows. 
-  
-  The above equation ensures that once pair-wise windows have True Boolean labels for the inverted-V, the dissimilarly should be maximally reduced.
+  <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\{w}')</sub> are the boolean labels for pair-wise windows. The above equation ensures that once pair-wise windows have True Boolean labels for the inverted-V, the dissimilarly should be maximally reduced.
 
 - **Overall Normalized Dissimilarity**  
   The total dissimilarity <sub>![\tilde{d}_{ij}](https://latex.codecogs.com/svg.latex?\tilde{d}_{ij})</sub> between segments *P<sub>i</sub>* and *P<sub>j</sub>* is computed as a weighted sum of the above metrics:
