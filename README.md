@@ -4,7 +4,7 @@
 This Python script identifies flow regimes present in a pressure transient diagnostic data. It applies both **K-Means** and **K-Medoids** clustering techniques, as well as semi-automated K-clustering using the Elbow method. It can reliably partition the diagnostic data into the different flow regimes by integrating various subject-specific diagnostic indicators. 
 The program implements a sliding window approach to segment the pressure transient diagnostic data. Two standard partitioning techniques are utilized:
 - **K-Means:** Applies Euclidean distance metric on segments, where each segment is characterized by a set of normalized mid-point (x, y) coordinates, along with slope and index information.
-- **K-Medoids:** Applies a weighted composite pair-wise dissimilarity between segments, where is segment is characterized by Euclidean distance, angular difference, temporal and pattern information.
+- **K-Medoids:** Applies a weighted composite pair-wise dissimilarity between segments, where each segment is characterized by Euclidean distance, angular difference, temporal and pattern information.
 
 ## Main Features
 
@@ -46,9 +46,9 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
      
    The normalized Euclidean distance <sub>![\tilde{d}_{E_{ij}}](https://latex.codecogs.com/svg.latex?\tilde{d}_{E_{ij}})</sub> is computed as:
 
-   ![Normalized Euclidean Distance](https://latex.codecogs.com/svg.latex?\tilde{d}_{E_{ij}}=\frac{1}{D_{E_{\max}}}\sqrt{\sum_{k=1}^{m}\Bigl[(x_{ik}-x_{jk})^2+(y_{ik}-y_{jk})^2\Bigr]})
+   ![Normalized Euclidean Distance](https://latex.codecogs.com/svg.latex?\tilde{d{D_{E_{\max}}}_{E_{ij}}=\frac{1}}\sqrt{\sum_{k=1}^{m}\Bigl[(x_{ik}-x_{jk})^2+(y_{ik}-y_{jk})^2\Bigr]})
 
-   where *D<sub>E_max</sub>* is the maximum value in the Euclidean distance matrix.
+   where <sub>![D_{E_{\max}}](https://latex.codecogs.com/svg.latex?D_{E_{\max}})</sub> is the maximum value in the Euclidean distance matrix.
 - **Angular Dissimilarity**  
    For segments with at least two points, compute slopes *m₁* and *m₂* (via linear regression) for segments *P<sub>i</sub>* and *P<sub>j</sub>* respectively. The angular dissimilarity <sub>![\tilde{d}_{\theta_{ij}}](https://latex.codecogs.com/svg.latex?\tilde{d}_{\theta_{ij}})</sub> is:
 
