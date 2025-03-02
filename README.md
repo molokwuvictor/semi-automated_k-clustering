@@ -46,10 +46,9 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
      
    The normalized Euclidean distance <sub>![\tilde{d}_{E_{ij}}](https://latex.codecogs.com/svg.latex?\tilde{d}_{E_{ij}})</sub> is computed as:
 
-   ![Normalized Euclidean Distance](https://latex.codecogs.com/svg.latex?\tilde{d{D_{E_{\max}}}_{E_{ij}}=\frac{1}}\sqrt{\sum_{k=1}^{m}\Bigl[(x_{ik}-x_{jk})^2+(y_{ik}-y_{jk})^2\Bigr]})
+   ![Normalized Euclidean Distance](https://latex.codecogs.com/svg.latex?\tilde{d}_{E_{ij}}=\frac{1}{D_{E_{\max}}}\sqrt{\sum_{k=1}^{m}\Bigl[(x_{ik}-x_{jk})^2+(y_{ik}-y_{jk})^2\Bigr]})
 
-   where <sub>![D_{E_{\max}}](https://latex.codecogs.com/svg.latex?D_{E_{\max}})</sub> is the maximum value in the Euclidean distance matrix.
-   
+   where *D<sub>E_max</sub>* is the maximum value in the Euclidean distance matrix.
 - **Angular Dissimilarity**  
    For segments with at least two points, compute slopes *m₁* and *m₂* (via linear regression) for segments *P<sub>i</sub>* and *P<sub>j</sub>* respectively. The angular dissimilarity <sub>![\tilde{d}_{\theta_{ij}}](https://latex.codecogs.com/svg.latex?\tilde{d}_{\theta_{ij}})</sub> is:
 
