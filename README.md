@@ -68,12 +68,22 @@ A set of pairwise standardized dissimilarity measures are calculated between seg
   ![Temporal Penalty Alternative](https://latex.codecogs.com/svg.latex?\tilde{d}_{T_{ij}}=\max(0,\delta-1))
 
 - **Inverted-V Identification**  
-  When an inverted-V pattern is detected before a predefined cut-off (*early_time_index*), boolean labels <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\{w}')</sub> are set to True for the corresponding segments. The dissimilarity <sub>![\tilde{d}_{\Lambda(i,j)}](https://latex.codecogs.com/svg.latex?\tilde{d}_{\Lambda(i,j)})</sub> is defined as:
+  The shape (inverted-V) penalty <sub>![\tilde{d}_{\Lambda{ij}}](https://latex.codecogs.com/svg.latex?\tilde{d}_{\Lambda{ij}})</sub> is designed to effectively group all segments in a window of segments where an inverted “V” pattern. This penalty ensures that when weak and strong wellbore storage occur in the early time region (ETR), all segments within the ETR are grouped as a single cluster. 
+
+  **Inverted-V identification method:**
+  - For each sliding block of 𝑝 consecutive windows, check if any consecutive pair within the block satisfies the inverted-V condition. Specifically, the slope of the linearly-fitted line on the left window must be greater than zero, and the slope on the right window must be less than zero.
+  - When any pair of windows within the sliding block satisfies the inverted-V condition, all the windows within the block are labelled as inverted-V by setting their Boolean labels to True. Otherwise, if the inverted-V condition is not satisfied within the block, all the windows retain their default labels of False.
+  - Also, when the inverted-V is achieved at a window index less than some set cut-off (*early_time_index*), then the Boolean labels for all windows in the sliding block and all windows from index 0 up to that block (which is bounded to right by the sliding block) are set to a True value. 
+  
   ![Figure 2: Illustration of the inverted-V pattern (dashed line) in a diagnostic plot, which has been split into n-segments and overlain by a sliding block of p-segments](./images/segmentation_2.png) 
+
+  The Boolean label for each window is used to create a dissimilarity matrix using the expression:
 
   ![Inverted-V Identification](https://latex.codecogs.com/svg.latex?%5Ctilde%7Bd%7D_%7B%5CLambda_%7Bij%7D%7D%3D%5Cbegin%7Bcases%7D-1%2C%26%5Ctext%7Bif%20%7Dw%5Ctext%7B%20and%20%7Dw'%5Ctext%7B%20are%20True%7D%5C%5C0%2C%26%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D)
 
-  This ensures that segments with an inverted-V pattern are strongly grouped together.
+  <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?{w})</sub> and <sub>![calligraphic w](https://latex.codecogs.com/svg.latex?\{w}')</sub> are the boolean labels for pair-wise windows. 
+  
+  The above equation ensures that once pair-wise windows have True Boolean labels for the inverted-V, the dissimilarly should be maximally reduced.
 
 - **Overall Normalized Dissimilarity**  
   The total dissimilarity <sub>![\tilde{d}_{ij}](https://latex.codecogs.com/svg.latex?\tilde{d}_{ij})</sub> between segments *P<sub>i</sub>* and *P<sub>j</sub>* is computed as a weighted sum of the above metrics:
