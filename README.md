@@ -97,15 +97,16 @@ The max function ensures that the overall dissimilarity is non-negative.
 ### Clustering Techniques
 
 - **K-Means Clustering:**  
-  - **Representation:** Each segment is represented by a feature vector containing normalized mid-point coordinates, slope, and index information.
-  - **Process:** The Euclidean distance between the feature vector and the cluster centroid is computed, segments are assigned to the nearest centroid, and centroids are updated iteratively until convergence.
+  - **Representation:** Representation: Each segment is described by a feature vector that contains normalized mid-point coordinates, slope, and indexing terms.
+  - **Process:** Euclidean distance from the feature vector to the cluster centroid is computed, segments are assigned to the nearest centroid, and centroids are iteratively updated until convergence.
 
 - **K-Medoids Clustering:**  
   - **Representation:** Uses the composite dissimilarity measure <sub>![\tilde{d}_{ij}](https://latex.codecogs.com/svg.latex?\tilde{d}_{ij})</sub> computed from Euclidean, angular, temporal, and inverted-V metrics.
-  - **Process:** Selects actual data segments (medoids) as cluster centers and forms clusters based on the weighted aggregation of these dissimilarities.
+  - **Process:** Selects actual data segments cluster centers (medoids). These medoids are formed based on the minimization of the pair-wise composite dissimilarities within each cluster.
 
 - **Semi-Automated K-Clustering with the Elbow Method:**  
-  - **Process:** Computes the within-cluster sum-of-squares (WCSS) for various \(K\) values, generates an Elbow plot to indicate where WCSS reduction plateaus, and recommends an optimal \(K\) while allowing manual adjustments.
+  - **Process:** Computes the within-cluster sum-of-squares (WCSS) for various \(k\) values. The algorithm then generates an Elbow plot, which indicates an optimal \(k\) value, after which WCSS decreases very gradually. The elbow point is a heuristic approach to estimate the number of flow regimes or clusters in the dataset.
+      Manual adjustments may be required by the well test analyst to improve the estimated \(k\) value.
 
 ## Installation and Requirements
 
