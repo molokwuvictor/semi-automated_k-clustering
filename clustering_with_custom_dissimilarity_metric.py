@@ -11,8 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn_extra.cluster import KMedoids  # pip install scikit-learn-extra
 import pandas as pd
-from scipy.ndimage import uniform_filter1d
-from scipy.ndimage import gaussian_filter1d
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer, SilhouetteVisualizer
@@ -429,7 +427,6 @@ def main_kmedoids_auto():
     for i, w in enumerate(windows):
         w['cluster'] = labels[i]
     
-    # --- Visualization: 2D Projection (x vs. y) ---
     # --- Visualization: 2D Projection (x vs. y) ---
     title='2D Projection (x, y) of N-D Data Semi-Automated Clustering\n(using KMedoids (PAM) with Normalized & Weighted Metrics)'
     cf.plot_2d_clustering(data, windows, cf.reassign_clusters, title, medoid_indices=medoid_indices)
