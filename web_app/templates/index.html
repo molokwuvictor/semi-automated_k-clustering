@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustering Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .github-link img {
+            width: 32px;
+            height: 32px;
+            transition: transform 0.3s ease;
+        }
+        .github-link img:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="https://github.com/xxx" target="_blank" class="github-link" title="View on GitHub">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+        </a>
+        <header>
+            <h1>Clustering Visualization</h1>
+            <p>Upload your data file and explore different clustering methods</p>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="file-upload">
+                    <h2>Data Upload</h2>
+                    <form id="uploadForm">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="fileInput" accept=".xlsx,.csv" required>
+                            <label for="fileInput" class="file-label">Choose File</label>
+                        </div>
+                        <div class="sheet-name-input">
+                            <label for="sheetName">Sheet Name (for Excel):</label>
+                            <input type="text" id="sheetName" value="Sheet1">
+                        </div>
+                        <button type="submit" class="upload-btn">Upload</button>
+                    </form>
+                </div>
+
+                <div class="clustering-params">
+                    <h2>Clustering Parameters</h2>
+                    <div class="method-selector">
+                        <label for="clusteringMethod">Clustering Method:</label>
+                        <select id="clusteringMethod">
+                            <option value="kmeans">K-Means</option>
+                            <option value="kmedoids">K-Medoids</option>
+                            <option value="semi_automated">Semi-Automated</option>
+                        </select>
+                    </div>
+
+                    <div class="parameter-sliders">
+                        <div class="slider-group">
+                            <label for="nClusters">Number of Clusters:</label>
+                            <input type="range" id="nClusters" min="1" max="10" value="3" step="1">
+                            <span class="slider-value">3</span>
+                        </div>
+
+                        <div class="slider-group">
+                            <label for="windowSize">Window Size:</label>
+                            <input type="range" id="windowSize" min="1" max="20" value="5" step="1">
+                            <span class="slider-value">5</span>
+                        </div>
+
+                        <div class="kmedoids-params" style="display: none;">
+                            <div class="slider-group">
+                                <label for="lambdaE">Lambda E:</label>
+                                <input type="range" id="lambdaE" min="0" max="10" value="1" step="0.1">
+                                <span class="slider-value">1.0</span>
+                            </div>
+
+                            <div class="slider-group">
+                                <label for="lambdaP">Lambda P:</label>
+                                <input type="range" id="lambdaP" min="0" max="10" value="1" step="0.1">
+                                <span class="slider-value">1.0</span>
+                            </div>
+
+                            <div class="slider-group">
+                                <label for="beta">Beta:</label>
+                                <input type="range" id="beta" min="0" max="10" value="0.5" step="0.1">
+                                <span class="slider-value">0.5</span>
+                            </div>
+
+                            <div class="slider-group">
+                                <label for="gammaBlock">Gamma Block:</label>
+                                <input type="range" id="gammaBlock" min="0" max="10" value="1" step="0.1">
+                                <span class="slider-value">1.0</span>
+                            </div>
+
+                            <div class="slider-group">
+                                <label for="p">P (Block Size):</label>
+                                <input type="range" id="p" min="1" max="10" value="4" step="1">
+                                <span class="slider-value">4</span>
+                            </div>
+
+                            <div class="extra-metrics-toggle">
+                                <label>
+                                    <input type="checkbox" id="extraMetricsToggle">
+                                    Show Extra Metrics
+                                </label>
+                            </div>
+
+                            <div class="extra-metrics-params" style="display: none;">
+                                <div class="slider-group">
+                                    <label for="delta">Delta:</label>
+                                    <input type="range" id="delta" min="0" max="10" value="0.1" step="0.1">
+                                    <span class="slider-value">0.1</span>
+                                </div>
+
+                                <div class="slider-group">
+                                    <label for="threshold">Threshold:</label>
+                                    <input type="range" id="threshold" min="0" max="10" value="0.1" step="0.1">
+                                    <span class="slider-value">0.1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="updatePlot" class="update-btn" disabled>Update Plot</button>
+                </div>
+            </div>
+
+            <div class="visualization-panel">
+                <div class="plot-container">
+                    <div id="clusterPlot" class="plot"></div>
+                </div>
+                <div id="elbowPlotContainer" class="plot-container" style="display: none;">
+                    <div id="elbowPlot" class="plot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
