@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clustering Visualization</title>
+    <title>Flow Regime Identification</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -17,6 +17,7 @@
             width: 32px;
             height: 32px;
             transition: transform 0.3s ease;
+            mix-blend-mode: multiply; /* Makes white background transparent on light backgrounds */
         }
         .github-link img:hover {
             transform: scale(1.1);
@@ -25,18 +26,19 @@
 </head>
 <body>
     <div class="container">
-        <a href="https://github.com/xxx" target="_blank" class="github-link" title="View on GitHub">
+        <a href="https://github.com/molokwuvictor/semi-automated_k-clustering" target="_blank" class="github-link" title="View on GitHub">
             <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
         </a>
         <header>
-            <h1>Clustering Visualization</h1>
-            <p>Upload your data file and explore different clustering methods</p>
+            <h1>Flow Regime Identification</h1>
+            <p>Upload your pressure transient diagnostic data and explore different clustering methods for flow regime identification</p>
         </header>
 
         <div class="main-content">
             <div class="controls-panel">
                 <div class="file-upload">
                     <h2>Data Upload</h2>
+                    <p class="small-font"><em>Upload an Excel (.xlsx) or CSV (.csv) file with headers: "lndt", "dp" and "dp_dlndt"</em></p>
                     <form id="uploadForm">
                         <div class="file-input-wrapper">
                             <input type="file" id="fileInput" accept=".xlsx,.csv" required>

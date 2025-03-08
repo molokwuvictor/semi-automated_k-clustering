@@ -43,6 +43,10 @@ header p {
     font-size: 1.1rem;
 }
 
+.small-font {
+    font-size: 12px;
+}
+
 .main-content {
     display: grid;
     grid-template-columns: 350px 1fr;
