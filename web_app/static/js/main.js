@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('fileInput');
     const sheetNameInput = document.getElementById('sheetName');
     const clusteringMethod = document.getElementById('clusteringMethod');
+    const backboneSelector = document.querySelector('.backbone-selector');
+    const backboneRadios = document.querySelectorAll('input[name="backboneMethod"]');
     const kmedoidsParams = document.querySelector('.kmedoids-params');
     const extraMetricsToggle = document.getElementById('extraMetricsToggle');
     const extraMetricsParams = document.querySelector('.extra-metrics-params');
@@ -35,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     uploadForm.addEventListener('submit', handleFileUpload);
     clusteringMethod.addEventListener('change', handleMethodChange);
+    backboneRadios.forEach(radio => {
+        radio.addEventListener('change', handleBackboneChange);
+    });
     updatePlotBtn.addEventListener('click', updatePlots);
     extraMetricsToggle.addEventListener('change', toggleExtraMetrics);
     
@@ -81,12 +86,44 @@ document.addEventListener('DOMContentLoaded', function() {
         const method = e.target.value;
         console.log("Method changed to:", method);
         
-        // Show/hide appropriate parameter sections
-        const showKmedoidsParams = method !== 'kmeans';
+        // Show/hide backbone selector for semi-automated method
+        backboneSelector.style.display = method === 'semi_automated' ? 'block' : 'none';
         
-        // For all methods, we show Lambda_E, Lambda_P, and Beta
-        // Find the sliders more reliably without using :has selector which may not be supported in all browsers
-        const kmedoidsContainer = document.querySelector('.kmedoids-params');
+        if (method === 'semi_automated') {
+            // When semi-automated is selected, use the backbone method to determine which parameters to show
+            const backboneMethod = getSelectedBackboneMethod();
+            updateParametersBasedOnBackbone(backboneMethod);
+        } else {
+            // For direct methods, show parameters based on the selected method
+            const showKmedoidsParams = method === 'kmedoids';
+            updateParametersVisibility(showKmedoidsParams);
+        }
+        
+        elbowPlotContainer.style.display = 'none';
+    }
+    
+    // Get the selected backbone method
+    function getSelectedBackboneMethod() {
+        const selectedRadio = document.querySelector('input[name="backboneMethod"]:checked');
+        return selectedRadio ? selectedRadio.value : 'kmeans'; // Default to kmeans
+    }
+    
+    // Backbone Method Change Handler
+    function handleBackboneChange(e) {
+        const backboneMethod = e.target.value;
+        console.log("Backbone method changed to:", backboneMethod);
+        updateParametersBasedOnBackbone(backboneMethod);
+    }
+    
+    // Update parameters based on backbone method
+    function updateParametersBasedOnBackbone(method) {
+        const showKmedoidsParams = method === 'kmedoids';
+        updateParametersVisibility(showKmedoidsParams);
+    }
+    
+    // Update parameter visibility based on method
+    function updateParametersVisibility(showKmedoidsParams) {
+        // Always show Lambda_E, Lambda_P, and Beta
         const lambdaESlider = document.getElementById('lambdaE').closest('.slider-group');
         const lambdaPSlider = document.getElementById('lambdaP').closest('.slider-group');
         const betaSlider = document.getElementById('beta').closest('.slider-group');
@@ -94,28 +131,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const pSlider = document.getElementById('p').closest('.slider-group');
         const extraMetricsToggleParent = extraMetricsToggle.closest('.extra-metrics-toggle');
         
-        // Always show Lambda_E, Lambda_P, and Beta
+        // Always show these parameters
         lambdaESlider.style.display = 'block';
         lambdaPSlider.style.display = 'block';
         betaSlider.style.display = 'block';
         
-        // Only show these for k-medoids and semi-automated
+        // Only show these for k-medoids
         gammaBlockSlider.style.display = showKmedoidsParams ? 'block' : 'none';
         pSlider.style.display = showKmedoidsParams ? 'block' : 'none';
         extraMetricsToggleParent.style.display = showKmedoidsParams ? 'block' : 'none';
         
         // Show/hide kmedoids container
-        kmedoidsContainer.style.display = showKmedoidsParams ? 'block' : 'none';
+        kmedoidsParams.style.display = showKmedoidsParams ? 'block' : 'none';
         
         if (!showKmedoidsParams) {
             extraMetricsToggle.checked = false;
             extraMetricsParams.style.display = 'none';
         } else {
-            // If kmedoids or semi-automated, show/hide extra metrics based on checkbox
+            // If kmedoids, show/hide extra metrics based on checkbox
             extraMetricsParams.style.display = extraMetricsToggle.checked ? 'block' : 'none';
         }
-        
-        elbowPlotContainer.style.display = 'none';
     }
 
     // File Upload Handler
@@ -159,12 +194,14 @@ document.addEventListener('DOMContentLoaded', function() {
             lambda_p: parseFloat(sliders.lambdaP.value),
             beta: parseFloat(sliders.beta.value)
         };
+        
+        // For semi-automated method, include the backbone method
+        if (method === 'semi_automated') {
+            params.backbone_method = getSelectedBackboneMethod();
+        }
 
-        // Log parameters for debugging
-        console.log("Sending parameters to server:", params);
-
-        // Add additional parameters for k-medoids and semi-automated
-        if (method !== 'kmeans') {
+        // Add additional parameters for k-medoids and semi-automated with k-medoids backbone
+        if (method === 'kmedoids' || (method === 'semi_automated' && params.backbone_method === 'kmedoids')) {
             const extraMetricsEnabled = extraMetricsToggle.checked;
             Object.assign(params, {
                 delta: extraMetricsEnabled ? parseFloat(sliders.delta.value) : 0.1,
@@ -173,6 +210,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 p: parseInt(sliders.p.value)
             });
         }
+
+        // Log parameters for debugging
+        console.log("Sending parameters to server:", params);
 
         try {
             const response = await fetch('/cluster', {
