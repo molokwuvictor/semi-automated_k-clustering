@@ -241,17 +241,27 @@ def perform_clustering(method, params):
             # print(f"Unique reassigned clusters: {np.unique(labels)}")
             
         else:  # kmeans
+            # Extract features from windows
             features = []
             for w in windows:
                 median = w['median']
-                features.append([median[0], median[1], w['slope'], w['index']])
-            features = np.array(features)
+                # Apply weighting factors to features
+                features.append([
+                    params.get('lambda_e', 1.0) * median[0],  # Weight x-coordinate
+                    params.get('lambda_e', 1.0) * median[1],  # Weight y-coordinate
+                    params.get('lambda_p', 1.0) * w['slope'],  # Weight slope
+                    params.get('beta', 0.5) * w['index']  # Weight index
+                ])
             
+            # Convert to numpy array
+            X = np.array(features)
+            
+            # Standardize features
             scaler = StandardScaler()
-            features_scaled = scaler.fit_transform(features)
+            X_scaled = scaler.fit_transform(X)
             
             kmeans = KMeans(n_clusters=params['n_clusters'], random_state=42)
-            labels = kmeans.fit_predict(features_scaled)
+            labels = kmeans.fit_predict(X_scaled)
             centers = scaler.inverse_transform(kmeans.cluster_centers_)
             
             # print(f"Original KMeans cluster labels: {labels}")

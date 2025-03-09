@@ -64,12 +64,34 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleMethodChange(e) {
         const method = e.target.value;
         console.log("Method changed to:", method);
-        const showKmedoidsParams = method !== 'kmeans';
-        kmedoidsParams.style.display = showKmedoidsParams ? 'block' : 'none';
         
-        // Hide extra metrics toggle for kmeans
+        // Show/hide appropriate parameter sections
+        const showKmedoidsParams = method !== 'kmeans';
+        
+        // For K-means, we still show Lambda_E, Lambda_P, and Beta, but hide the rest
+        const lambdaESlider = document.querySelector('.slider-group:has(#lambdaE)');
+        const lambdaPSlider = document.querySelector('.slider-group:has(#lambdaP)');
+        const betaSlider = document.querySelector('.slider-group:has(#beta)');
+        const gammaBlockSlider = document.querySelector('.slider-group:has(#gammaBlock)');
+        const pSlider = document.querySelector('.slider-group:has(#p)');
         const extraMetricsToggleParent = extraMetricsToggle.closest('.extra-metrics-toggle');
+        
+        // Always show Lambda_E, Lambda_P, and Beta
+        if (lambdaESlider) lambdaESlider.style.display = 'block';
+        if (lambdaPSlider) lambdaPSlider.style.display = 'block';
+        if (betaSlider) betaSlider.style.display = 'block';
+        
+        // Only show these for k-medoids and semi-automated
+        if (gammaBlockSlider) gammaBlockSlider.style.display = showKmedoidsParams ? 'block' : 'none';
+        if (pSlider) pSlider.style.display = showKmedoidsParams ? 'block' : 'none';
         extraMetricsToggleParent.style.display = showKmedoidsParams ? 'block' : 'none';
+        
+        // Move Lambda_E, Lambda_P, and Beta out of kmedoids-params if they're not already
+        const parameterSliders = document.querySelector('.parameter-sliders');
+        const kmedoidsParams = document.querySelector('.kmedoids-params');
+        
+        // Hide the rest of kmedoids params for kmeans
+        kmedoidsParams.style.display = showKmedoidsParams ? 'block' : 'none';
         
         if (!showKmedoidsParams) {
             extraMetricsToggle.checked = false;
@@ -115,15 +137,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = {
             method: method,
             n_clusters: parseInt(sliders.nClusters.value),
-            window_size: parseInt(sliders.windowSize.value)
+            window_size: parseInt(sliders.windowSize.value),
+            // Always include these parameters for all methods
+            lambda_e: parseFloat(sliders.lambdaE.value),
+            lambda_p: parseFloat(sliders.lambdaP.value),
+            beta: parseFloat(sliders.beta.value)
         };
 
+        // Add additional parameters for k-medoids and semi-automated
         if (method !== 'kmeans') {
             const extraMetricsEnabled = extraMetricsToggle.checked;
             Object.assign(params, {
-                lambda_e: parseFloat(sliders.lambdaE.value),
-                lambda_p: parseFloat(sliders.lambdaP.value),
-                beta: parseFloat(sliders.beta.value),
                 delta: extraMetricsEnabled ? parseFloat(sliders.delta.value) : 0.1,
                 threshold: extraMetricsEnabled ? parseFloat(sliders.threshold.value) : 0.1,
                 gamma_block: parseFloat(sliders.gammaBlock.value),
