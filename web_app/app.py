@@ -169,32 +169,33 @@ def perform_clustering(method, params):
                 try:
                     # Create and fit the visualizer
                     kmedoids = KMedoids(metric='precomputed', method='pam', random_state=42)
-                    visualizer = KElbowVisualizer(kmedoids, k=(2,10), timings=False)
+                    visualizer = KElbowVisualizer(kmedoids, k=(2,params['n_clusters']*3), timings=False)
                     visualizer.fit(distance_matrix)
                     
-                    # Get the figure from the visualizer
-                    fig = visualizer.fig
+                    # Instead of creating a base64 image, extract the data for JS plotting
+                    elbow_data = {
+                        'k_values': visualizer.k_values_, 
+                        'k_scores': visualizer.k_scores_,
+                        'elbow_value': int(visualizer.elbow_value_) if visualizer.elbow_value_ is not None else None,
+                        'elbow_score': float(visualizer.elbow_score_) if visualizer.elbow_score_ is not None else None,
+                        'locate_elbow': bool(visualizer.locate_elbow),
+                        'estimator': str(visualizer.estimator),
+                    }
                     
-                    # Save the plot
-                    elbow_buf = io.BytesIO()
-                    fig.savefig(elbow_buf, format='png', bbox_inches='tight', dpi=300)
-                    elbow_buf.seek(0)
-                    elbow_plot = base64.b64encode(elbow_buf.getvalue()).decode()
-                    # print(f"Elbow plot generated, length of base64 string: {len(elbow_plot)}")
-                    plt.close(fig)
+                    # print(f"Elbow data: {elbow_data}")
                     
                     k = visualizer.elbow_value_
                     if k is None:  # If no clear elbow is found
                         k = params['n_clusters']
                     # print(f"Optimal k from elbow method: {k}")
                 except Exception as e:
-                    # print(f"Error in elbow plot generation: {str(e)}")
+                    print(f"Error in elbow plot generation: {str(e)}")
                     traceback.print_exc()  # Print the full traceback
-                    elbow_plot = None
+                    elbow_data = None
                     k = params['n_clusters']  # Fallback to user-specified number of clusters
             else:
+                elbow_data = None
                 k = params['n_clusters']
-                elbow_plot = None
                 
             # print(f"Using k={k} for clustering")
             
@@ -241,17 +242,39 @@ def perform_clustering(method, params):
             # print(f"Unique reassigned clusters: {np.unique(labels)}")
             
         else:  # kmeans
+            # Get parameters with default values
+            lambda_e = params.get('lambda_e', 1.0)
+            lambda_p = params.get('lambda_p', 1.0)
+            beta = params.get('beta', 0.5)
+            
+            # Convert to float to ensure we handle numeric values correctly
+            try:
+                lambda_e = float(lambda_e)
+                lambda_p = float(lambda_p)
+                beta = float(beta)
+            except (ValueError, TypeError):
+                print("Error converting parameters to float, using defaults")
+                lambda_e = 1.0
+                lambda_p = 1.0
+                beta = 0.5
+            
+            # print(f"K-means parameters: lambda_e={lambda_e}, lambda_p={lambda_p}, beta={beta}")
+            
             # Extract features from windows
             features = []
             for w in windows:
                 median = w['median']
                 # Apply weighting factors to features
                 features.append([
-                    params.get('lambda_e', 1.0) * median[0],  # Weight x-coordinate
-                    params.get('lambda_e', 1.0) * median[1],  # Weight y-coordinate
-                    params.get('lambda_p', 1.0) * w['slope'],  # Weight slope
-                    params.get('beta', 0.5) * w['index']  # Weight index
+                    lambda_e * median[0],  # Weight x-coordinate
+                    lambda_e * median[1],  # Weight y-coordinate
+                    lambda_p * w['slope'],  # Weight slope
+                    beta * w['index']  # Weight index
                 ])
+            
+            # Print a sample of weighted features for debugging
+            # if features:
+            #     print(f"Sample weighted feature: {features[0]}")
             
             # Convert to numpy array
             X = np.array(features)
@@ -301,7 +324,7 @@ def perform_clustering(method, params):
             # print(f"Unique reassigned KMeans clusters: {np.unique(labels)}")
             
             medoid_indices = None
-            elbow_plot = None
+            elbow_data = None
         
         # Prepare data for plotting
         plot_data = {
@@ -324,7 +347,7 @@ def perform_clustering(method, params):
         # print(f"Unique cluster labels in windows: {np.unique([w['cluster'] for w in plot_data['windows']])}")
         # print(f"Window data shapes: {[len(w['data']) for w in plot_data['windows'][:5]]} (first 5 windows)")
         
-        return plot_data, elbow_plot
+        return plot_data, elbow_data
     except Exception as e:
         # print(f"Error in perform_clustering: {str(e)}")
         traceback.print_exc()  # Print the full traceback
@@ -356,26 +379,34 @@ def upload_file():
 
 @app.route('/cluster', methods=['POST'])
 def cluster():
-    if current_data is None:
-        return jsonify({'error': 'No data available'}), 400
-    
     try:
-        params = request.json
-        method = params.pop('method')
+        data = request.json
+        method = data.get('method', 'kmeans')
+        params = data
         
-        # print(f"Clustering requested with method: {method}, parameters: {params}")
+        # Debug log the parameters
+        # print(f"Clustering method: {method}")
+        # print(f"Parameters: {params}")
+        # print(f"Lambda_E: {params.get('lambda_e', 1.0)}")
+        # print(f"Lambda_P: {params.get('lambda_p', 1.0)}")
+        # print(f"Beta: {params.get('beta', 0.5)}")
         
-        plot_data, elbow_plot = perform_clustering(method, params)
+        global current_data, current_sheet_name
+        
+        if current_data is None:
+            return jsonify({'error': 'No data uploaded yet'}), 400
+        
+        plot_data, elbow_data = perform_clustering(method, params)
         if plot_data is None:
             return jsonify({'error': 'Error performing clustering'}), 400
         
-        # print(f"Clustering completed. Elbow plot generated: {elbow_plot is not None}")
-        # if elbow_plot is not None:
-        #     print(f"Elbow plot data length: {len(elbow_plot)}")
+        # print(f"Clustering completed. Elbow plot generated: {elbow_data is not None}")
+        # if elbow_data is not None:
+        #     print(f"Elbow plot data length: {len(elbow_data)}")
         
         return jsonify({
             'plot_data': plot_data,
-            'elbow_plot': elbow_plot
+            'elbow_data': elbow_data
         })
     except Exception as e:
         print(f"Error in cluster route: {str(e)}")

@@ -44,6 +44,22 @@ document.addEventListener('DOMContentLoaded', function() {
             slider.addEventListener('input', (e) => {
                 const value = parseFloat(e.target.value);
                 e.target.nextElementSibling.textContent = value.toFixed(1);
+                // Log when slider values change to debug
+                console.log(`Slider ${key} changed to ${value}`);
+            });
+        }
+    });
+    
+    // Add a specific listener for Lambda_E, Lambda_P, and Beta to ensure they work
+    ['lambdaE', 'lambdaP', 'beta'].forEach(id => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.addEventListener('change', () => {
+                console.log(`${id} final value: ${slider.value}`);
+                // If updatePlot button is not disabled, we could automatically update
+                if (!updatePlotBtn.disabled && clusteringMethod.value === 'kmeans') {
+                    console.log(`Auto-updating plot because ${id} changed in kmeans mode`);
+                }
             });
         }
     });
@@ -68,30 +84,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show/hide appropriate parameter sections
         const showKmedoidsParams = method !== 'kmeans';
         
-        // For K-means, we still show Lambda_E, Lambda_P, and Beta, but hide the rest
-        const lambdaESlider = document.querySelector('.slider-group:has(#lambdaE)');
-        const lambdaPSlider = document.querySelector('.slider-group:has(#lambdaP)');
-        const betaSlider = document.querySelector('.slider-group:has(#beta)');
-        const gammaBlockSlider = document.querySelector('.slider-group:has(#gammaBlock)');
-        const pSlider = document.querySelector('.slider-group:has(#p)');
+        // For all methods, we show Lambda_E, Lambda_P, and Beta
+        // Find the sliders more reliably without using :has selector which may not be supported in all browsers
+        const kmedoidsContainer = document.querySelector('.kmedoids-params');
+        const lambdaESlider = document.getElementById('lambdaE').closest('.slider-group');
+        const lambdaPSlider = document.getElementById('lambdaP').closest('.slider-group');
+        const betaSlider = document.getElementById('beta').closest('.slider-group');
+        const gammaBlockSlider = document.getElementById('gammaBlock').closest('.slider-group');
+        const pSlider = document.getElementById('p').closest('.slider-group');
         const extraMetricsToggleParent = extraMetricsToggle.closest('.extra-metrics-toggle');
         
         // Always show Lambda_E, Lambda_P, and Beta
-        if (lambdaESlider) lambdaESlider.style.display = 'block';
-        if (lambdaPSlider) lambdaPSlider.style.display = 'block';
-        if (betaSlider) betaSlider.style.display = 'block';
+        lambdaESlider.style.display = 'block';
+        lambdaPSlider.style.display = 'block';
+        betaSlider.style.display = 'block';
         
         // Only show these for k-medoids and semi-automated
-        if (gammaBlockSlider) gammaBlockSlider.style.display = showKmedoidsParams ? 'block' : 'none';
-        if (pSlider) pSlider.style.display = showKmedoidsParams ? 'block' : 'none';
+        gammaBlockSlider.style.display = showKmedoidsParams ? 'block' : 'none';
+        pSlider.style.display = showKmedoidsParams ? 'block' : 'none';
         extraMetricsToggleParent.style.display = showKmedoidsParams ? 'block' : 'none';
         
-        // Move Lambda_E, Lambda_P, and Beta out of kmedoids-params if they're not already
-        const parameterSliders = document.querySelector('.parameter-sliders');
-        const kmedoidsParams = document.querySelector('.kmedoids-params');
-        
-        // Hide the rest of kmedoids params for kmeans
-        kmedoidsParams.style.display = showKmedoidsParams ? 'block' : 'none';
+        // Show/hide kmedoids container
+        kmedoidsContainer.style.display = showKmedoidsParams ? 'block' : 'none';
         
         if (!showKmedoidsParams) {
             extraMetricsToggle.checked = false;
@@ -134,6 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update Plots Handler
     async function updatePlots() {
         const method = clusteringMethod.value;
+        
+        // Get all parameter values from sliders
         const params = {
             method: method,
             n_clusters: parseInt(sliders.nClusters.value),
@@ -143,6 +159,9 @@ document.addEventListener('DOMContentLoaded', function() {
             lambda_p: parseFloat(sliders.lambdaP.value),
             beta: parseFloat(sliders.beta.value)
         };
+
+        // Log parameters for debugging
+        console.log("Sending parameters to server:", params);
 
         // Add additional parameters for k-medoids and semi-automated
         if (method !== 'kmeans') {
@@ -169,23 +188,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 updateClusterPlot(data.plot_data);
                 
-                // Handle elbow plot
-                if (method === 'semi_automated') {
-                    console.log("Elbow plot data received:", data.elbow_plot ? "Yes" : "No");
-                    
-                    if (data.elbow_plot) {
-                        elbowPlotContainer.style.display = 'block';
-                        updateElbowPlot(data.elbow_plot);
-                        showNotification('Elbow plot generated. Using optimal number of clusters.', 'success');
-                    } else {
-                        elbowPlotContainer.style.display = 'none';
-                        showNotification('Elbow plot generation failed. Using specified number of clusters.', 'warning');
-                    }
+                // Update elbow plot if available (for semi-automated method)
+                if (method === 'semi_automated' && data.elbow_data) {
+                    console.log("Received elbow data:", data.elbow_data);
+                    updateElbowPlot(data.elbow_data);
+                    elbowPlotContainer.style.display = 'block';
                 } else {
                     elbowPlotContainer.style.display = 'none';
                 }
+                
+                showNotification("Clustering completed successfully!", "success");
             } else {
-                showNotification(data.error || 'Error updating plots', 'error');
+                showNotification(data.error || "Error performing clustering", "error");
             }
         } catch (error) {
             console.error("Error during plot update:", error);
@@ -340,32 +354,166 @@ document.addEventListener('DOMContentLoaded', function() {
         Plotly.newPlot(clusterPlotElement, traces, layout, config);
     }
 
-    function updateElbowPlot(base64Image) {
-        if (!base64Image) {
-            console.error("No base64 image data received for elbow plot");
+    // Function to update the elbow plot
+    function updateElbowPlot(elbowData) {
+        console.log("Updating elbow plot with data:", elbowData);
+        
+        // Clear the plot container
+        const elbowPlotElement = document.getElementById('elbowPlot');
+        elbowPlotElement.innerHTML = '';
+        
+        // Check if we have valid elbow data
+        if (!elbowData || !elbowData.k_values || !elbowData.k_scores) {
+            console.error("No valid elbow data provided");
+            elbowPlotContainer.style.display = 'none';
             return;
         }
         
-        console.log("Updating elbow plot with image data of length:", base64Image.length);
+        // Ensure the container is visible
+        elbowPlotContainer.style.display = 'block';
         
-        // Create an img element to display the elbow plot
-        const elbowPlotElement = document.getElementById('elbowPlot');
-        elbowPlotElement.innerHTML = ''; // Clear previous content
+        const kValues = elbowData.k_values;
+        const kScores = elbowData.k_scores;
+        const elbowValue = elbowData.elbow_value;
+        const elbowScore = elbowData.elbow_score;
         
-        const img = document.createElement('img');
-        img.src = 'data:image/png;base64,' + base64Image;
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.maxWidth = '800px';
-        img.style.display = 'block';
-        img.style.margin = '0 auto';
-        
-        img.onerror = function() {
-            console.error("Error loading elbow plot image");
-            showNotification("Failed to display elbow plot", "error");
+        // Create the main score line trace
+        const scoreLine = {
+            x: kValues,
+            y: kScores,
+            mode: 'lines+markers',
+            name: 'Distortion Score',
+            line: {
+                color: 'blue',
+                width: 2
+            },
+            marker: {
+                color: 'blue',
+                size: 8,
+                symbol: 'square'
+            }
         };
         
-        elbowPlotElement.appendChild(img);
+        const traces = [scoreLine];
+        
+        // Add vertical line at elbow point if available
+        if (elbowValue !== null) {
+            // Add vertical dashed line at elbow point
+            traces.push({
+                x: [elbowValue, elbowValue],
+                y: [Math.min(...kScores) * 0.9, Math.max(...kScores) * 1.1],
+                mode: 'lines',
+                name: `Elbow Point (k=${elbowValue})`,
+                line: {
+                    color: 'black',
+                    width: 2,
+                    dash: 'dash'
+                }
+            });
+            
+            // Create tangent line for elbow point
+            if (elbowValue < kValues.length - 1) {
+                // Find the index of the elbow value in kValues
+                const elbowIndex = kValues.indexOf(elbowValue);
+                
+                if (elbowIndex !== -1 && elbowIndex < kValues.length - 1) {
+                    const x1 = elbowValue;
+                    const y1 = kScores[elbowIndex];
+                    const x2 = kValues[elbowIndex + 1];
+                    const y2 = kScores[elbowIndex + 1];
+                    
+                    // Calculate slope of the tangent line
+                    const slope = (y2 - y1) / (x2 - x1);
+                    
+                    // Extrapolate the line backward and forward
+                    const extraStartX = Math.max(1, x1 - 1);
+                    const extraEndX = Math.min(Math.max(...kValues) + 1, x2 + 2);
+                    
+                    // Calculate y values using the line equation: y = slope * (x - x1) + y1
+                    const extraStartY = slope * (extraStartX - x1) + y1;
+                    const extraEndY = slope * (extraEndX - x1) + y1;
+                    
+                    // Add tangent line
+                    traces.push({
+                        x: [extraStartX, x1, x2, extraEndX],
+                        y: [extraStartY, y1, y2, extraEndY],
+                        mode: 'lines',
+                        name: 'Tangent Line',
+                        line: {
+                            color: 'red',
+                            width: 2,
+                            dash: 'dash'
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Create the layout
+        const layout = {
+            title: {
+                text: 'Elbow Method for Optimal k',
+                font: { size: 20, family: 'Roboto' }
+            },
+            xaxis: { 
+                title: { text: 'k', font: { size: 14 } },
+                tickmode: 'array',
+                tickvals: kValues,
+                showgrid: true,
+                gridcolor: '#e0e0e0'
+            },
+            yaxis: { 
+                title: { text: 'Distortion score (WCSS)', font: { size: 14 } },
+                showgrid: true,
+                gridcolor: '#e0e0e0',
+                tickformat: '.3f'
+            },
+            showlegend: true,
+            legend: {
+                x: 1.05,
+                y: 1,
+                xanchor: 'left',
+                font: {
+                    family: 'Courier New, monospace',
+                    size: 12
+                }
+            },
+            margin: { t: 50, b: 80, l: 80, r: 150 },
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            annotations: [
+                {
+                    x: 1.05,
+                    y: 0.8,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: `Estimator: ${elbowData.estimator}<br>` +
+                          `Locate Elbow: ${elbowData.locate_elbow}<br>` +
+                          `Elbow Value: ${elbowData.elbow_value}<br>` +
+                          `Elbow Score: ${elbowData.elbow_score?.toFixed(3)}`,
+                    showarrow: false,
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 12
+                    },
+                    align: 'left',
+                    bordercolor: '#c7c7c7',
+                    borderwidth: 1,
+                    bgcolor: '#ffffff',
+                    opacity: 0.8
+                }
+            ]
+        };
+        
+        // Configuration for the plot
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d']
+        };
+        
+        // Create the plot
+        Plotly.newPlot(elbowPlotElement, traces, layout, config);
     }
 
     // Notification function
