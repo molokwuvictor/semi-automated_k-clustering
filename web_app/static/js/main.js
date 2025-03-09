@@ -524,10 +524,10 @@ document.addEventListener('DOMContentLoaded', function() {
             annotations: [
                 {
                     x: 1.05,
-                    y: 0.8,
+                    y: 0.98,
                     xref: 'paper',
                     yref: 'paper',
-                    text: `Estimator: ${elbowData.estimator}<br>` +
+                    text: `Estimator: ${insertLineBreaks(elbowData.estimator, 30)}<br>` +
                           `Locate Elbow: ${elbowData.locate_elbow}<br>` +
                           `Elbow Value: ${elbowData.elbow_value}<br>` +
                           `Elbow Score: ${elbowData.elbow_score?.toFixed(3)}`,
@@ -536,11 +536,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         family: 'Courier New, monospace',
                         size: 12
                     },
-                    align: 'left',
+                    align: 'right',
                     bordercolor: '#c7c7c7',
                     borderwidth: 1,
                     bgcolor: '#ffffff',
-                    opacity: 0.8
+                    opacity: 0.8,
                 }
             ]
         };
@@ -569,4 +569,26 @@ document.addEventListener('DOMContentLoaded', function() {
             notification.remove();
         }, 5000);
     }
+
+    // Line break function
+    function insertLineBreaks(text, maxLineLength) {
+        let result = '';
+        let lineLength = 0;
+        const words = text.split(' ');
+    
+        words.forEach((word, index) => {
+            if (lineLength + word.length + 1 > maxLineLength) {
+                result += '<br>';
+                lineLength = 0;
+            } else if (index > 0) {
+                result += ' ';
+                lineLength += 1;
+            }
+            result += word;
+            lineLength += word.length;
+        });
+    
+        return result;
+    }
+    
 }); 

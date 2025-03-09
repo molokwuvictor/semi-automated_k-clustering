@@ -170,7 +170,8 @@ def perform_clustering(method, params):
             D_max = 0
             for i in range(len(windows)):
                 for j in range(i+1, len(windows)):
-                    dist_ij = np.linalg.norm(windows[i]['median'] - windows[j]['median'])
+                    dist_ij = np.linalg.norm(windows[i]['data'].flatten() - windows[j]['data'].flatten())
+                    # dist_ij = np.linalg.norm(windows[i]['median'] - windows[j]['median'])
                     if dist_ij > D_max:
                         D_max = dist_ij
             
@@ -256,7 +257,8 @@ def perform_clustering(method, params):
                 D_max = 0
                 for i in range(len(windows)):
                     for j in range(i+1, len(windows)):
-                        dist_ij = np.linalg.norm(windows[i]['median'] - windows[j]['median'])
+                        dist_ij = np.linalg.norm(windows[i]['data'].flatten() - windows[j]['data'].flatten())
+                        # dist_ij = np.linalg.norm(windows[i]['median'] - windows[j]['median'])
                         if dist_ij > D_max:
                             D_max = dist_ij
                 
@@ -294,12 +296,12 @@ def perform_clustering(method, params):
                         'estimator': str(visualizer.estimator),
                     }
                     
-                    print(f"Elbow data: {elbow_data}")
+                    # print(f"Elbow data: {elbow_data}")
                     
                     k = visualizer.elbow_value_
                     if k is None:  # If no clear elbow is found
                         k = params['n_clusters']
-                    print(f"Optimal k from elbow method: {k}")
+                    #print(f"Optimal k from elbow method: {k}")
                     
                     # Perform k-medoids clustering with optimal k
                     kmedoids = KMedoids(n_clusters=k, metric='precomputed', method='pam', random_state=42)
@@ -358,12 +360,12 @@ def perform_clustering(method, params):
                         'estimator': str(visualizer.estimator),
                     }
                     
-                    print(f"Elbow data: {elbow_data}")
+                    # print(f"Elbow data: {elbow_data}")
                     
                     k = visualizer.elbow_value_
                     if k is None:  # If no clear elbow is found
                         k = params['n_clusters']
-                    print(f"Optimal k from elbow method: {k}")
+                    # print(f"Optimal k from elbow method: {k}")
                     
                     # Perform k-means clustering with optimal k
                     kmeans = KMeans(n_clusters=k, random_state=42)
