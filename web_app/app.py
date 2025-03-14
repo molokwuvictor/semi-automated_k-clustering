@@ -26,6 +26,8 @@ current_sheet_name = None
 # OpenRouter API configuration
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+GOOGLE_SEARCH_ENGINE_ID = os.getenv('GOOGLE_SEARCH_ENGINE_ID')
 
 def process_data(file_data, sheet_name='Sheet1'):
     """Process the uploaded Excel/CSV file and return the data"""
@@ -509,22 +511,40 @@ def web_search():
     if not query:
         return jsonify([])
     
-    # Here you would implement web search functionality
-    # For now, returning mock results
-    mock_results = [
-        {
-            'title': 'Flow Regime Identification in Pressure Transient Analysis',
-            'url': 'https://example.com/flow-regime',
-            'snippet': 'Learn about different methods for identifying flow regimes in pressure transient analysis...'
-        },
-        {
-            'title': 'K-means Clustering in Time Series Analysis',
-            'url': 'https://example.com/kmeans',
-            'snippet': 'Understanding how K-means clustering can be applied to time series data...'
+    # Use Google Custom Search API
+    try:
+        if not GOOGLE_API_KEY or not GOOGLE_SEARCH_ENGINE_ID:
+            print("Google Search API key or search engine ID not configured.")
+            return jsonify({'error': 'Search API not configured'}), 500
+        
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            'key': GOOGLE_API_KEY,
+            'cx': GOOGLE_SEARCH_ENGINE_ID,
+            'q': query,
+            'num': 5  # Number of results
         }
-    ]
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        search_results = response.json()
+        
+        # Format the search results
+        results = []
+        if 'items' in search_results:
+            for item in search_results['items']:
+                results.append({
+                    'title': item.get('title', ''),
+                    'url': item.get('link', ''),
+                    'snippet': item.get('snippet', '')
+                })
+        
+        return jsonify(results)
     
-    return jsonify(mock_results)
+    except Exception as e:
+        print(f"Error in web search: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Search error: {str(e)}'}), 500
 
 @app.route('/ai_search', methods=['POST'])
 def ai_search():
@@ -536,20 +556,23 @@ def ai_search():
             return jsonify({'error': 'No query provided'}), 400
         
         if not OPENROUTER_API_KEY:
+            print("OpenRouter API key not configured.")
             return jsonify({'error': 'OpenRouter API key not configured'}), 500
         
         # Prepare the request to OpenRouter API
         headers = {
             'Authorization': f'Bearer {OPENROUTER_API_KEY}',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'HTTP-Referer': request.host_url,  # Required by OpenRouter
+            'X-Title': 'Flow Regime Identification'  # Identifier for your app
         }
         
         payload = {
-            'model': 'deepseek/deepseek-coder-33b-instruct',
+            'model': 'deepseek/deepseek-llm-67b-chat',  # Using DeepSeek R1 model
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'You are a helpful AI assistant specializing in flow regime identification and clustering analysis. Provide clear, concise, and accurate responses.'
+                    'content': 'You are a helpful AI assistant specializing in flow regime identification and clustering analysis. Provide clear, concise, and accurate responses. Show your step-by-step thinking process as you answer.'
                 },
                 {
                     'role': 'user',
@@ -557,21 +580,44 @@ def ai_search():
                 }
             ],
             'temperature': 0.7,
-            'max_tokens': 500
+            'max_tokens': 800,
+            'stream': False,
+            'tools': []
         }
         
         # Make the request to OpenRouter API
         response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         
-        # Extract the AI's response
-        ai_response = response.json()['choices'][0]['message']['content']
+        response_data = response.json()
         
-        return jsonify({'response': ai_response})
+        # Extract the AI's response and format it
+        ai_response = response_data['choices'][0]['message']['content']
+        
+        # Split the response into thinking and final answer if it contains reasoning
+        thinking = ""
+        final_answer = ai_response
+        
+        if "I'm thinking" in ai_response or "Let me think" in ai_response or "First," in ai_response:
+            # Try to identify thinking vs conclusion
+            parts = ai_response.split("\n\n")
+            if len(parts) > 1:
+                thinking = "\n\n".join(parts[:-1])
+                final_answer = parts[-1]
+        
+        return jsonify({
+            'response': final_answer,
+            'thinking': thinking,
+            'full_response': ai_response
+        })
         
     except requests.exceptions.RequestException as e:
+        print(f"Error communicating with AI service: {str(e)}")
+        traceback.print_exc()
         return jsonify({'error': f'Error communicating with AI service: {str(e)}'}), 500
     except Exception as e:
+        print(f"Server error in AI search: {str(e)}")
+        traceback.print_exc()
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
