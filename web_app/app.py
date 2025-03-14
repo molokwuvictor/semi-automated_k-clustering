@@ -11,12 +11,21 @@ from sklearn.preprocessing import StandardScaler
 import auxiliary_functions as cf
 import os
 import traceback
+import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
 # Global variables to store the current data
 current_data = None
 current_sheet_name = None
+
+# OpenRouter API configuration
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def process_data(file_data, sheet_name='Sheet1'):
     """Process the uploaded Excel/CSV file and return the data"""
@@ -492,6 +501,77 @@ def cluster():
     except Exception as e:
         print(f"Error in cluster route: {str(e)}")
         traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/web_search')
+def web_search():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+    
+    # Here you would implement web search functionality
+    # For now, returning mock results
+    mock_results = [
+        {
+            'title': 'Flow Regime Identification in Pressure Transient Analysis',
+            'url': 'https://example.com/flow-regime',
+            'snippet': 'Learn about different methods for identifying flow regimes in pressure transient analysis...'
+        },
+        {
+            'title': 'K-means Clustering in Time Series Analysis',
+            'url': 'https://example.com/kmeans',
+            'snippet': 'Understanding how K-means clustering can be applied to time series data...'
+        }
+    ]
+    
+    return jsonify(mock_results)
+
+@app.route('/ai_search', methods=['POST'])
+def ai_search():
+    try:
+        data = request.json
+        query = data.get('query', '')
+        
+        if not query:
+            return jsonify({'error': 'No query provided'}), 400
+        
+        if not OPENROUTER_API_KEY:
+            return jsonify({'error': 'OpenRouter API key not configured'}), 500
+        
+        # Prepare the request to OpenRouter API
+        headers = {
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'model': 'deepseek/deepseek-coder-33b-instruct',
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'You are a helpful AI assistant specializing in flow regime identification and clustering analysis. Provide clear, concise, and accurate responses.'
+                },
+                {
+                    'role': 'user',
+                    'content': query
+                }
+            ],
+            'temperature': 0.7,
+            'max_tokens': 500
+        }
+        
+        # Make the request to OpenRouter API
+        response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        
+        # Extract the AI's response
+        ai_response = response.json()['choices'][0]['message']['content']
+        
+        return jsonify({'response': ai_response})
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Error communicating with AI service: {str(e)}'}), 500
+    except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
