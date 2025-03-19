@@ -7,268 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
-        .github-link {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-        .github-link img {
-            width: 32px;
-            height: 32px;
-            transition: transform 0.3s ease;
-            mix-blend-mode: multiply; /* Makes white background transparent on light backgrounds */
-        }
-        .github-link img:hover {
-            transform: scale(1.1);
-        }
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-        /* Search Sidebar Styles */
-        .search-sidebar {
-            position: fixed;
-            right: 0;
-            top: 0;
-            height: 100vh;
-            width: 350px;
-            background: var(--panel-background);
-            box-shadow: -2px 0 10px var(--shadow-color);
-            padding: 2rem;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .search-sidebar.active {
-            transform: translateX(0);
-        }
-
-        .search-toggle {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 50px;
-            height: 50px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            z-index: 1001;
-            transition: background-color 0.3s ease;
-        }
-
-        .search-toggle:hover {
-            background: var(--secondary-color);
-        }
-
-        .search-toggle i {
-            color: white;
-            font-size: 24px;
-        }
-
-        .search-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .search-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .search-tab {
-            padding: 0.5rem 1rem;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 1rem;
-            color: #666;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .search-tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-        }
-
-        .search-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            margin-bottom: 1rem;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .search-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-            outline: none;
-        }
-
-        .search-results {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .search-result-item {
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            background-color: #fff;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .search-result-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-result-item.error {
-            border-color: #f44336;
-            background-color: #ffebee;
-        }
-
-        .search-result-title {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .search-result-title a {
-            text-decoration: none;
-            color: var(--primary-color);
-        }
-
-        .search-result-title a:hover {
-            text-decoration: underline;
-        }
-
-        .search-result-content {
-            font-size: 0.9rem;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        /* AI Result Styles */
-        .ai-result {
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .thinking-section, .answer-section {
-            padding: 1rem;
-        }
-
-        .thinking-section {
-            background-color: #f5f9ff;
-            border-bottom: 1px solid #e0e9f5;
-        }
-
-        .thinking-header, .answer-header {
-            font-weight: 500;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .thinking-header i {
-            color: #5c6bc0;
-        }
-
-        .answer-header i {
-            color: var(--primary-color);
-        }
-
-        .thinking-content, .answer-content {
-            line-height: 1.6;
-            color: #444;
-        }
-
-        .thinking-content {
-            font-style: italic;
-            color: #666;
-        }
-
-        /* Code Formatting */
-        .ai-result pre {
-            background-color: #f8f8f8;
-            padding: 1rem;
-            border-radius: 4px;
-            margin: 0.8rem 0;
-            overflow-x: auto;
-        }
-
-        .ai-result code {
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-
-        .ai-result code:not(pre code) {
-            background-color: #f0f0f0;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-        }
-
-        .close-sidebar {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-            padding: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-sidebar:hover {
-            color: var(--primary-color);
-        }
-
-        /* Adjust main content for sidebar */
-        .container {
-            transition: margin-right 0.3s ease;
-        }
-
-        .container.sidebar-active {
-            margin-right: 350px;
-        }
-
-        /* Mobile Responsive Adjustments */
-        @media (max-width: 768px) {
-            .search-sidebar {
-                width: 100%;
-            }
-            
-            .container.sidebar-active {
-                margin-right: 0;
-            }
-        }
-    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -419,9 +161,37 @@
             <button class="search-tab" data-tab="ai">AI Search</button>
         </div>
         <div class="search-content">
-            <input type="text" class="search-input" placeholder="Enter your search query...">
+            <div class="ai-search-container">
+                <div class="search-input-container">
+                    <input type="text" class="search-input" placeholder="Enter your search query...">
+                    <button class="search-button" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="model-dropdown-container" id="modelDropdownContainer">
+                    <div class="model-dropdown-button" id="modelDropdownButton">
+                        <span id="selectedModel">DeepSeek R1-free</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="model-dropdown-menu" id="modelDropdownMenu">
+                        <div class="model-option selected" data-model="deepseek/deepseek-r1:free">DeepSeek R1-free</div>
+                        <div class="model-option" data-model="qwen/qwq-32b:free">Qwen 32B-free</div>
+                    </div>
+                    <div class="stop-button-container">
+                        <button class="stop-button" id="aiStopButton">
+                            <i class="fas fa-stop"></i>Stop Search
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="search-results">
                 <!-- Results will be populated here -->
+            </div>
+            <div class="search-footnote web-footnote">
+                Powered by google search
+            </div>
+            <div class="search-footnote ai-footnote">
+                Powered by openrouter.ai servers US
             </div>
         </div>
     </div>

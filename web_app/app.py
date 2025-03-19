@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import pandas as pd
 import numpy as np
 import io
@@ -13,6 +13,7 @@ import os
 import traceback
 import requests
 from dotenv import load_dotenv
+import json
 
 # Load environment variables
 load_dotenv()
@@ -551,6 +552,8 @@ def ai_search():
     try:
         data = request.json
         query = data.get('query', '')
+        model_id = data.get('model', 'deepseek/deepseek-r1:free')  # Default to DeepSeek R1
+        streaming = data.get('stream', False)  # Check if streaming is requested
         
         if not query:
             return jsonify({'error': 'No query provided'}), 400
@@ -558,6 +561,17 @@ def ai_search():
         if not OPENROUTER_API_KEY:
             print("OpenRouter API key not configured.")
             return jsonify({'error': 'OpenRouter API key not configured'}), 500
+        
+        # Validate model selection
+        valid_models = {
+            'deepseek/deepseek-r1:free': 'DeepSeek R1-free',
+            'qwen/qwq-32b:free': 'Qwen 32B-free',
+            'deepseek/deepseek-chat:free': 'DeepSeek chat'  # Fallback option
+        }
+        
+        if model_id not in valid_models:
+            print(f"Invalid model selected: {model_id}, falling back to DeepSeek R1")
+            model_id = 'deepseek/deepseek-r1:free'
         
         # Prepare the request to OpenRouter API
         headers = {
@@ -567,12 +581,26 @@ def ai_search():
             'X-Title': 'Flow Regime Identification'  # Identifier for your app
         }
         
+        # Improved system prompt that allows for general questions while focusing on flow regime
+        system_prompt = """You are a helpful AI assistant with expertise in flow regime identification from pressure transient diagnostic data and clustering analysis. 
+
+Your primary focus is on helping users understand:
+1. Flow regime identification techniques
+2. Pressure transient analysis
+3. Clustering methods like K-means and K-medoids
+4. Data interpretation for well testing
+
+However, you can also answer general questions on other topics to the best of your ability.
+
+When answering technical questions, show your step-by-step thinking process and reasoning. Break down complex concepts into understandable parts.
+"""
+        
         payload = {
-            'model': 'deepseek/deepseek-llm-67b-chat',  # Using DeepSeek R1 model
+            'model': model_id,
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'You are a helpful AI assistant specializing in flow regime identification and clustering analysis. Provide clear, concise, and accurate responses. Show your step-by-step thinking process as you answer.'
+                    'content': system_prompt
                 },
                 {
                     'role': 'user',
@@ -580,39 +608,154 @@ def ai_search():
                 }
             ],
             'temperature': 0.7,
-            'max_tokens': 800,
-            'stream': False,
-            'tools': []
+            'max_tokens': 4000,
+            'stream': streaming  # Enable streaming if requested
         }
         
-        # Make the request to OpenRouter API
-        response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
+        print(f"Sending request to OpenRouter with model: {payload['model']}, streaming: {streaming}")
         
-        response_data = response.json()
-        
-        # Extract the AI's response and format it
-        ai_response = response_data['choices'][0]['message']['content']
-        
-        # Split the response into thinking and final answer if it contains reasoning
-        thinking = ""
-        final_answer = ai_response
-        
-        if "I'm thinking" in ai_response or "Let me think" in ai_response or "First," in ai_response:
-            # Try to identify thinking vs conclusion
-            parts = ai_response.split("\n\n")
-            if len(parts) > 1:
-                thinking = "\n\n".join(parts[:-1])
-                final_answer = parts[-1]
-        
-        return jsonify({
-            'response': final_answer,
-            'thinking': thinking,
-            'full_response': ai_response
-        })
+        if streaming:
+            # Return streamed response
+            def generate():
+                # Set up streaming session
+                session = requests.Session()
+                
+                # Include model info in the first response
+                first_chunk = json.dumps({
+                    'token_type': 'thinking',
+                    'token': '',
+                    'model_used': valid_models.get(model_id, model_id)
+                }) + '\n'
+                
+                yield first_chunk
+                
+                response = session.post(
+                    OPENROUTER_API_URL,
+                    headers=headers,
+                    json=payload,
+                    stream=True
+                )
+                
+                if response.status_code != 200:
+                    error_msg = json.dumps({
+                        'token_type': 'error',
+                        'token': f"Error from API: {response.status_code} - {response.text}"
+                    }) + '\n'
+                    yield error_msg
+                    return
+
+                # For OpenRouter streaming, process the chunks
+                buffer = ""
+                current_type = "thinking"  # Start in thinking mode
+                
+                for chunk in response.iter_lines():
+                    if chunk:
+                        chunk_str = chunk.decode('utf-8')
+                        
+                        # OpenRouter returns data: <json> format
+                        if chunk_str.startswith('data: '):
+                            json_str = chunk_str[6:]  # Remove 'data: ' prefix
+                            
+                            # Check for end of stream
+                            if json_str == '[DONE]':
+                                # Send a final notification to switch to answer mode if still in thinking
+                                if current_type == "thinking":
+                                    final_chunk = json.dumps({
+                                        'token_type': 'answer',
+                                        'token': '\n\n' + buffer.split('\n\n')[-1] if '\n\n' in buffer else buffer
+                                    }) + '\n'
+                                    yield final_chunk
+                                continue
+                                
+                            try:
+                                chunk_data = json.loads(json_str)
+                                
+                                # Extract the delta content if available
+                                if 'choices' in chunk_data and len(chunk_data['choices']) > 0:
+                                    choice = chunk_data['choices'][0]
+                                    
+                                    if 'delta' in choice and 'content' in choice['delta'] and choice['delta']['content']:
+                                        token = choice['delta']['content']
+                                        buffer += token
+                                        
+                                        # Enhanced pattern detection for transition from thinking to answer
+                                        # Look for clear conclusion markers
+                                        if current_type == "thinking" and any(marker in buffer[-100:] for marker in [
+                                            "\n\nIn conclusion", "\n\nTo summarize", "\n\nTherefore", 
+                                            "\n\nIn summary", "\n\nThe answer is", "\n\nFinal answer:",
+                                            "\n\nTo conclude", "\n\nOverall,"
+                                        ]):
+                                            # Send an explicit token to switch to answer mode
+                                            switch_token = json.dumps({
+                                                'token_type': 'answer',
+                                                'token': ''  # Empty token just to trigger the switch
+                                            }) + '\n'
+                                            yield switch_token
+                                            current_type = "answer"
+                                        
+                                        # Stream the token with its type
+                                        token_data = json.dumps({
+                                            'token_type': current_type,
+                                            'token': token
+                                        }) + '\n'
+                                        
+                                        yield token_data
+                            except json.JSONDecodeError:
+                                # Handle malformed JSON
+                                continue
+            
+            return Response(generate(), mimetype='application/x-ndjson')
+        else:
+            # Non-streaming response (original implementation)
+            response = requests.post(OPENROUTER_API_URL, headers=headers, json=payload)
+            
+            # Check for error and provide detailed information
+            if response.status_code != 200:
+                print(f"OpenRouter API error: {response.status_code}")
+                print(f"Response content: {response.text}")
+                response.raise_for_status()
+            
+            response_data = response.json()
+            
+            # Extract the AI's response and format it
+            ai_response = response_data['choices'][0]['message']['content']
+            
+            # Split the response into thinking and final answer if it contains reasoning
+            thinking = ""
+            final_answer = ai_response
+            
+            # Look for thinking patterns in the response
+            thinking_indicators = [
+                "I'm thinking", "Let me think", "First,", "Let's analyze", 
+                "To answer this", "Let me break this down", "Let's consider",
+                "My approach", "Step 1:", "To solve this"
+            ]
+            
+            has_thinking = any(indicator in ai_response for indicator in thinking_indicators)
+            
+            if has_thinking:
+                # Try to identify thinking vs conclusion
+                parts = ai_response.split("\n\n")
+                if len(parts) > 1:
+                    thinking = "\n\n".join(parts[:-1])
+                    final_answer = parts[-1]
+                else:
+                    # Try splitting by single newlines if double newlines don't work
+                    parts = ai_response.split("\n")
+                    if len(parts) > 2:  # Need at least 3 lines to have thinking + answer
+                        thinking = "\n".join(parts[:-1])
+                        final_answer = parts[-1]
+            
+            return jsonify({
+                'response': final_answer,
+                'thinking': thinking,
+                'full_response': ai_response,
+                'model_used': valid_models.get(model_id, model_id)
+            })
         
     except requests.exceptions.RequestException as e:
         print(f"Error communicating with AI service: {str(e)}")
+        print(f"Request details: URL={OPENROUTER_API_URL}, API Key prefix={OPENROUTER_API_KEY[:10] if OPENROUTER_API_KEY else 'None'}")
         traceback.print_exc()
         return jsonify({'error': f'Error communicating with AI service: {str(e)}'}), 500
     except Exception as e:
