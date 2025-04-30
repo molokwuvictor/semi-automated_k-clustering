@@ -108,6 +108,13 @@ The max function ensures that the overall dissimilarity is non-negative.
   - **Process:** Computes the within-cluster sum-of-squares (WCSS) for various \(k\) values. The algorithm then generates an Elbow plot, which indicates an optimal \(k\) value, after which WCSS decreases very gradually. The elbow point is a heuristic approach to estimate the number of flow regimes or clusters in the dataset.
       Manual adjustments may be required by the well test analyst to improve the estimated \(k\) value.
 
+### Web Application
+
+The web application (http://www.flowregimeid.com) is a Flask-based application that allows users to upload Excel or CSV files and perform clustering analysis on the data.
+
+For each segment, a set of features is extracted by computing a number of metrics as illustrated in Figure 1.
+![Figure 3: Clustering interface using the web application.](./images/web_homepage.png)
+
 ## Installation and Requirements
 
 ### Requirements
